@@ -1,13 +1,12 @@
 #!/usr/bin/env python 
 import argparse
 
+from environs import Env
 from evernote.api.client import EvernoteClient
 from evernote.api.client import NoteStore
 from bs4 import BeautifulSoup
 
-from config import Settings
 
-    
 def get_notebook_list(note_store, notebook_guid, number=10, offset=0):
     _filter = NoteStore.NoteFilter(notebookGuid=notebook_guid)
     resultSpec = NoteStore.NotesMetadataResultSpec(
@@ -37,18 +36,17 @@ if __name__ == '__main__':
                         help='number of records to dump')
     args = parser.parse_args()
 
-    config = Settings()
-
+    env = Env()
+    env.read_env()
     client = EvernoteClient(
-        token=config.EVERNOTE_PERSONAL_TOKEN,
-        sandbox=False
+        token=env('EVERNOTE_PERSONAL_TOKEN'),
+        sandbox=env.bool('SANDBOX'),
     )
+
     note_store = client.get_note_store()
 
-    notes = get_notebook_list(note_store, config.INBOX_NOTEBOOK_GUID, args.number).notes
+    notes = get_notebook_list(note_store, env('INBOX_NOTEBOOK_GUID'), args.number).notes
 
-    # print('Notes', notes)
-    
     for counter, note in enumerate(notes, start=1):
         print('\n--------- %s ---------' % counter)
         content = note_store.getNoteContent(note.guid)  # kwargs will be skipped by api because of bug
